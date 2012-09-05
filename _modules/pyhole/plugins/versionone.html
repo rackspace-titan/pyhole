@@ -1,0 +1,224 @@
+
+
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN"
+  "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+
+
+<html xmlns="http://www.w3.org/1999/xhtml">
+  <head>
+    <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+    
+    <title>pyhole.plugins.versionone &mdash; pyhole 0.6.5-3016e documentation</title>
+    
+    <link rel="stylesheet" href="../../../_static/default.css" type="text/css" />
+    <link rel="stylesheet" href="../../../_static/pygments.css" type="text/css" />
+    
+    <script type="text/javascript">
+      var DOCUMENTATION_OPTIONS = {
+        URL_ROOT:    '../../../',
+        VERSION:     '0.6.5-3016e',
+        COLLAPSE_INDEX: false,
+        FILE_SUFFIX: '.html',
+        HAS_SOURCE:  true
+      };
+    </script>
+    <script type="text/javascript" src="../../../_static/jquery.js"></script>
+    <script type="text/javascript" src="../../../_static/underscore.js"></script>
+    <script type="text/javascript" src="../../../_static/doctools.js"></script>
+    <link rel="top" title="pyhole 0.6.5-3016e documentation" href="../../../index.html" />
+    <link rel="up" title="Module code" href="../../index.html" /> 
+  </head>
+  <body>
+    <div class="related">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="../../../genindex.html" title="General Index"
+             accesskey="I">index</a></li>
+        <li><a href="../../../index.html">pyhole 0.6.5-3016e documentation</a> &raquo;</li>
+          <li><a href="../../index.html" accesskey="U">Module code</a> &raquo;</li> 
+      </ul>
+    </div>  
+
+    <div class="document">
+      <div class="documentwrapper">
+        <div class="bodywrapper">
+          <div class="body">
+            
+  <h1>Source code for pyhole.plugins.versionone</h1><div class="highlight"><pre>
+<span class="c">#   Copyright 2011 Johannes Erdfelt</span>
+<span class="c">#</span>
+<span class="c">#   Licensed under the Apache License, Version 2.0 (the &quot;License&quot;);</span>
+<span class="c">#   you may not use this file except in compliance with the License.</span>
+<span class="c">#   You may obtain a copy of the License at</span>
+<span class="c">#</span>
+<span class="c">#       http://www.apache.org/licenses/LICENSE-2.0</span>
+<span class="c">#</span>
+<span class="c">#   Unless required by applicable law or agreed to in writing, software</span>
+<span class="c">#   distributed under the License is distributed on an &quot;AS IS&quot; BASIS,</span>
+<span class="c">#   WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.</span>
+<span class="c">#   See the License for the specific language governing permissions and</span>
+<span class="c">#   limitations under the License.</span>
+
+<span class="sd">&quot;&quot;&quot;Pyhole VersionOne Plugin&quot;&quot;&quot;</span>
+
+<span class="kn">import</span> <span class="nn">traceback</span>
+
+<span class="kn">from</span> <span class="nn">lxml</span> <span class="kn">import</span> <span class="n">etree</span>
+
+<span class="kn">from</span> <span class="nn">pyhole</span> <span class="kn">import</span> <span class="n">plugin</span>
+<span class="kn">from</span> <span class="nn">pyhole</span> <span class="kn">import</span> <span class="n">utils</span>
+
+
+<div class="viewcode-block" id="VersionOne"><a class="viewcode-back" href="../../../plugins.html#pyhole.plugins.versionone.VersionOne">[docs]</a><span class="k">class</span> <span class="nc">VersionOne</span><span class="p">(</span><span class="n">plugin</span><span class="o">.</span><span class="n">Plugin</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;Provide access to the VersionOne API&quot;&quot;&quot;</span>
+
+    <span class="k">def</span> <span class="nf">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">irc</span><span class="p">):</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">irc</span> <span class="o">=</span> <span class="n">irc</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">name</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">__class__</span><span class="o">.</span><span class="n">__name__</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">disabled</span> <span class="o">=</span> <span class="bp">False</span>
+
+        <span class="k">try</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">versionone</span> <span class="o">=</span> <span class="n">utils</span><span class="o">.</span><span class="n">get_config</span><span class="p">(</span><span class="s">&quot;VersionOne&quot;</span><span class="p">)</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">versionone_domain</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">versionone</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s">&quot;domain&quot;</span><span class="p">)</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">versionone_key</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">versionone</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s">&quot;key&quot;</span><span class="p">)</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">versionone_username</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">versionone</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s">&quot;username&quot;</span><span class="p">)</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">versionone_password</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">versionone</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s">&quot;password&quot;</span><span class="p">)</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">versionone_url</span> <span class="o">=</span> <span class="p">(</span><span class="s">&quot;https://</span><span class="si">%s</span><span class="s">:</span><span class="si">%s</span><span class="s">@</span><span class="si">%s</span><span class="s">/</span><span class="si">%s</span><span class="s">/VersionOne/&quot;</span>
+                    <span class="s">&quot;rest-1.v1&quot;</span><span class="p">)</span> <span class="o">%</span> <span class="p">(</span>
+                    <span class="bp">self</span><span class="o">.</span><span class="n">versionone_username</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">versionone_password</span><span class="p">,</span>
+                    <span class="bp">self</span><span class="o">.</span><span class="n">versionone_domain</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">versionone_key</span><span class="p">)</span>
+        <span class="k">except</span> <span class="ne">Exception</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">disabled</span> <span class="o">=</span> <span class="bp">True</span>
+
+    <span class="nd">@plugin.hook_add_keyword</span><span class="p">(</span><span class="s">&quot;d-&quot;</span><span class="p">)</span>
+    <span class="nd">@utils.spawn</span>
+<div class="viewcode-block" id="VersionOne.keyword_defect"><a class="viewcode-back" href="../../../plugins.html#pyhole.plugins.versionone.VersionOne.keyword_defect">[docs]</a>    <span class="k">def</span> <span class="nf">keyword_defect</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">params</span><span class="o">=</span><span class="bp">None</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Retrieve VersionOne defect information (ex: D-01234)&quot;&quot;&quot;</span>
+        <span class="k">if</span> <span class="n">params</span> <span class="ow">and</span> <span class="ow">not</span> <span class="bp">self</span><span class="o">.</span><span class="n">disabled</span><span class="p">:</span>
+            <span class="n">params</span> <span class="o">=</span> <span class="n">utils</span><span class="o">.</span><span class="n">ensure_int</span><span class="p">(</span><span class="n">params</span><span class="p">)</span>
+            <span class="k">if</span> <span class="n">params</span><span class="p">:</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">_find_asset</span><span class="p">(</span><span class="s">&quot;Defect&quot;</span><span class="p">,</span> <span class="s">&quot;D-</span><span class="si">%s</span><span class="s">&quot;</span> <span class="o">%</span> <span class="n">params</span><span class="p">)</span>
+</div>
+    <span class="nd">@plugin.hook_add_keyword</span><span class="p">(</span><span class="s">&quot;b-&quot;</span><span class="p">)</span>
+    <span class="nd">@utils.spawn</span>
+<div class="viewcode-block" id="VersionOne.keyword_backlog"><a class="viewcode-back" href="../../../plugins.html#pyhole.plugins.versionone.VersionOne.keyword_backlog">[docs]</a>    <span class="k">def</span> <span class="nf">keyword_backlog</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">params</span><span class="o">=</span><span class="bp">None</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Retrieve VersionOne backlog information (ex: B-01234)&quot;&quot;&quot;</span>
+        <span class="k">if</span> <span class="n">params</span> <span class="ow">and</span> <span class="ow">not</span> <span class="bp">self</span><span class="o">.</span><span class="n">disabled</span><span class="p">:</span>
+            <span class="n">params</span> <span class="o">=</span> <span class="n">utils</span><span class="o">.</span><span class="n">ensure_int</span><span class="p">(</span><span class="n">params</span><span class="p">)</span>
+            <span class="k">if</span> <span class="n">params</span><span class="p">:</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">_find_asset</span><span class="p">(</span><span class="s">&quot;Story&quot;</span><span class="p">,</span> <span class="s">&quot;B-</span><span class="si">%s</span><span class="s">&quot;</span> <span class="o">%</span> <span class="n">params</span><span class="p">)</span>
+</div>
+    <span class="nd">@plugin.hook_add_keyword</span><span class="p">(</span><span class="s">&quot;tk-&quot;</span><span class="p">)</span>
+    <span class="nd">@utils.spawn</span>
+<div class="viewcode-block" id="VersionOne.keyword_task"><a class="viewcode-back" href="../../../plugins.html#pyhole.plugins.versionone.VersionOne.keyword_task">[docs]</a>    <span class="k">def</span> <span class="nf">keyword_task</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">params</span><span class="o">=</span><span class="bp">None</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Retrieve VersionOne task information (ex: TK-01234)&quot;&quot;&quot;</span>
+        <span class="k">if</span> <span class="n">params</span> <span class="ow">and</span> <span class="ow">not</span> <span class="bp">self</span><span class="o">.</span><span class="n">disabled</span><span class="p">:</span>
+            <span class="n">params</span> <span class="o">=</span> <span class="n">utils</span><span class="o">.</span><span class="n">ensure_int</span><span class="p">(</span><span class="n">params</span><span class="p">)</span>
+            <span class="k">if</span> <span class="n">params</span><span class="p">:</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">_find_asset</span><span class="p">(</span><span class="s">&quot;Task&quot;</span><span class="p">,</span> <span class="s">&quot;TK-</span><span class="si">%s</span><span class="s">&quot;</span> <span class="o">%</span> <span class="n">params</span><span class="p">)</span>
+</div>
+    <span class="nd">@plugin.hook_add_keyword</span><span class="p">(</span><span class="s">&quot;g-&quot;</span><span class="p">)</span>
+    <span class="nd">@utils.spawn</span>
+<div class="viewcode-block" id="VersionOne.keyword_goal"><a class="viewcode-back" href="../../../plugins.html#pyhole.plugins.versionone.VersionOne.keyword_goal">[docs]</a>    <span class="k">def</span> <span class="nf">keyword_goal</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">params</span><span class="o">=</span><span class="bp">None</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Retrieve VersionOne goal information (ex: G-01234)&quot;&quot;&quot;</span>
+        <span class="k">if</span> <span class="n">params</span> <span class="ow">and</span> <span class="ow">not</span> <span class="bp">self</span><span class="o">.</span><span class="n">disabled</span><span class="p">:</span>
+            <span class="n">params</span> <span class="o">=</span> <span class="n">utils</span><span class="o">.</span><span class="n">ensure_int</span><span class="p">(</span><span class="n">params</span><span class="p">)</span>
+            <span class="k">if</span> <span class="n">params</span><span class="p">:</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">_find_asset</span><span class="p">(</span><span class="s">&quot;Goal&quot;</span><span class="p">,</span> <span class="s">&quot;G-</span><span class="si">%s</span><span class="s">&quot;</span> <span class="o">%</span> <span class="n">params</span><span class="p">)</span>
+</div>
+    <span class="nd">@plugin.hook_add_keyword</span><span class="p">(</span><span class="s">&quot;r-&quot;</span><span class="p">)</span>
+    <span class="nd">@utils.spawn</span>
+<div class="viewcode-block" id="VersionOne.keyword_request"><a class="viewcode-back" href="../../../plugins.html#pyhole.plugins.versionone.VersionOne.keyword_request">[docs]</a>    <span class="k">def</span> <span class="nf">keyword_request</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">params</span><span class="o">=</span><span class="bp">None</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Retrieve VersionOne request information (ex: R-01234)&quot;&quot;&quot;</span>
+        <span class="k">if</span> <span class="n">params</span> <span class="ow">and</span> <span class="ow">not</span> <span class="bp">self</span><span class="o">.</span><span class="n">disabled</span><span class="p">:</span>
+            <span class="n">params</span> <span class="o">=</span> <span class="n">utils</span><span class="o">.</span><span class="n">ensure_int</span><span class="p">(</span><span class="n">params</span><span class="p">)</span>
+            <span class="k">if</span> <span class="n">params</span><span class="p">:</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">_find_asset</span><span class="p">(</span><span class="s">&quot;Request&quot;</span><span class="p">,</span> <span class="s">&quot;R-</span><span class="si">%s</span><span class="s">&quot;</span> <span class="o">%</span> <span class="n">params</span><span class="p">)</span>
+</div>
+    <span class="k">def</span> <span class="nf">_find_asset</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="nb">type</span><span class="p">,</span> <span class="n">number</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Find and display a VersionOne object&quot;&quot;&quot;</span>
+        <span class="n">url</span> <span class="o">=</span> <span class="s">&quot;</span><span class="si">%s</span><span class="s">/Data/</span><span class="si">%s</span><span class="s">?where=Number=&#39;</span><span class="si">%s</span><span class="s">&#39;&quot;</span> <span class="o">%</span> <span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">versionone_url</span><span class="p">,</span>
+                                                <span class="nb">type</span><span class="p">,</span> <span class="n">number</span><span class="p">)</span>
+        <span class="k">print</span> <span class="n">url</span>
+        <span class="n">response</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">irc</span><span class="o">.</span><span class="n">fetch_url</span><span class="p">(</span><span class="n">url</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">name</span><span class="p">)</span>
+        <span class="k">if</span> <span class="ow">not</span> <span class="n">response</span><span class="p">:</span>
+            <span class="k">return</span>
+
+        <span class="k">try</span><span class="p">:</span>
+            <span class="c">#data = response.read()</span>
+            <span class="c">#import sys, xml.dom.minidom</span>
+            <span class="c">#print xml.dom.minidom.parseString(data).toprettyxml()</span>
+            <span class="c">#root = etree.XML(data)</span>
+
+            <span class="n">root</span> <span class="o">=</span> <span class="n">etree</span><span class="o">.</span><span class="n">XML</span><span class="p">(</span><span class="n">response</span><span class="o">.</span><span class="n">read</span><span class="p">())</span>
+            <span class="n">asset</span> <span class="o">=</span> <span class="n">root</span><span class="o">.</span><span class="n">find</span><span class="p">(</span><span class="s">&quot;Asset&quot;</span><span class="p">)</span>
+            <span class="nb">id</span> <span class="o">=</span> <span class="n">asset</span><span class="o">.</span><span class="n">attrib</span><span class="p">[</span><span class="s">&#39;id&#39;</span><span class="p">]</span>
+            <span class="n">subject</span> <span class="o">=</span> <span class="n">asset</span><span class="o">.</span><span class="n">find</span><span class="p">(</span><span class="s">&#39;Attribute[@name=&quot;Name&quot;]&#39;</span><span class="p">)</span><span class="o">.</span><span class="n">text</span>
+            <span class="n">number</span> <span class="o">=</span> <span class="n">asset</span><span class="o">.</span><span class="n">find</span><span class="p">(</span><span class="s">&#39;Attribute[@name=&quot;Number&quot;]&#39;</span><span class="p">)</span><span class="o">.</span><span class="n">text</span>
+            <span class="n">status</span> <span class="o">=</span> <span class="n">asset</span><span class="o">.</span><span class="n">find</span><span class="p">(</span><span class="s">&#39;Attribute[@name=&quot;Status.Name&quot;]&#39;</span><span class="p">)</span>
+            <span class="k">if</span> <span class="n">status</span> <span class="ow">is</span> <span class="ow">not</span> <span class="bp">None</span><span class="p">:</span>
+                <span class="n">status</span> <span class="o">=</span> <span class="n">status</span><span class="o">.</span><span class="n">text</span>
+            <span class="n">owner</span> <span class="o">=</span> <span class="n">asset</span><span class="o">.</span><span class="n">find</span><span class="p">(</span><span class="s">&#39;Attribute[@name=&quot;Owners.Name&quot;]/Value&#39;</span><span class="p">)</span>
+            <span class="k">if</span> <span class="n">owner</span> <span class="ow">is</span> <span class="ow">not</span> <span class="bp">None</span><span class="p">:</span>
+                <span class="n">owner</span> <span class="o">=</span> <span class="n">owner</span><span class="o">.</span><span class="n">text</span>
+        <span class="k">except</span> <span class="ne">Exception</span><span class="p">:</span>
+            <span class="n">traceback</span><span class="o">.</span><span class="n">print_exc</span><span class="p">()</span>
+            <span class="k">return</span>
+
+        <span class="n">msg</span> <span class="o">=</span> <span class="s">&quot;V1 </span><span class="si">%s</span><span class="s"> #</span><span class="si">%s</span><span class="s">: </span><span class="si">%s</span><span class="s">&quot;</span> <span class="o">%</span> <span class="p">(</span><span class="nb">type</span><span class="p">,</span> <span class="n">number</span><span class="p">,</span> <span class="n">subject</span><span class="p">)</span>
+
+        <span class="n">attrs</span> <span class="o">=</span> <span class="p">[]</span>
+        <span class="k">if</span> <span class="n">status</span><span class="p">:</span>
+            <span class="n">attrs</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="s">&quot;Status: </span><span class="si">%s</span><span class="s">&quot;</span> <span class="o">%</span> <span class="n">status</span><span class="p">)</span>
+        <span class="k">if</span> <span class="nb">type</span> <span class="ow">in</span> <span class="p">(</span><span class="s">&#39;Defect&#39;</span><span class="p">,</span> <span class="s">&#39;Story&#39;</span><span class="p">):</span>
+            <span class="n">attrs</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="s">&quot;Assignee: </span><span class="si">%s</span><span class="s">&quot;</span> <span class="o">%</span> <span class="n">owner</span><span class="p">)</span>
+
+        <span class="k">if</span> <span class="n">attrs</span><span class="p">:</span>
+            <span class="n">msg</span> <span class="o">+=</span> <span class="s">&quot; [</span><span class="si">%s</span><span class="s">]&quot;</span> <span class="o">%</span> <span class="s">&quot;, &quot;</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">attrs</span><span class="p">)</span>
+
+        <span class="n">msg</span> <span class="o">+=</span> <span class="s">&quot; https://</span><span class="si">%s</span><span class="s">/</span><span class="si">%s</span><span class="s">/</span><span class="si">%s</span><span class="s">.mvc/Summary?oidToken=</span><span class="si">%s</span><span class="s">&quot;</span> <span class="o">%</span> <span class="p">(</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">versionone_domain</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">versionone_key</span><span class="p">,</span>
+                <span class="nb">type</span><span class="p">,</span> <span class="nb">id</span><span class="p">)</span>
+
+        <span class="bp">self</span><span class="o">.</span><span class="n">irc</span><span class="o">.</span><span class="n">reply</span><span class="p">(</span><span class="n">msg</span><span class="p">)</span></div>
+</pre></div>
+
+          </div>
+        </div>
+      </div>
+      <div class="sphinxsidebar">
+        <div class="sphinxsidebarwrapper">
+<div id="searchbox" style="display: none">
+  <h3>Quick search</h3>
+    <form class="search" action="../../../search.html" method="get">
+      <input type="text" name="q" />
+      <input type="submit" value="Go" />
+      <input type="hidden" name="check_keywords" value="yes" />
+      <input type="hidden" name="area" value="default" />
+    </form>
+    <p class="searchtip" style="font-size: 90%">
+    Enter search terms or a module, class or function name.
+    </p>
+</div>
+<script type="text/javascript">$('#searchbox').show(0);</script>
+        </div>
+      </div>
+      <div class="clearer"></div>
+    </div>
+    <div class="related">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="../../../genindex.html" title="General Index"
+             >index</a></li>
+        <li><a href="../../../index.html">pyhole 0.6.5-3016e documentation</a> &raquo;</li>
+          <li><a href="../../index.html" >Module code</a> &raquo;</li> 
+      </ul>
+    </div>
+    <div class="footer">
+        &copy; Copyright 2011, Josh Kearney.
+      Created using <a href="http://sphinx.pocoo.org/">Sphinx</a> 1.1.3.
+    </div>
+  </body>
+</html>

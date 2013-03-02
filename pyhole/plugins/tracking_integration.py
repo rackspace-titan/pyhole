@@ -50,6 +50,7 @@ class TrackingIntegration(plugin.Plugin):
             # Append the launchpad id
             desc = "<p>%s</p> <p>&nbsp;</p> <p>%s</p>" % (bug.description,
                                                           task.web_link)
+            desc = desc.replace("\n","<br>")
             self.version_one._v1asset('Defect', v1project, bug.title, desc)
         else:
             self.irc.reply(self.importlp.__doc__)

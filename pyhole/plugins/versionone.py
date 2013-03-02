@@ -288,9 +288,19 @@ class VersionOne(plugin.Plugin):
     @plugin.hook_add_command("v1asset")
     @utils.spawn
     def v1asset(self, params=None, **kwargs):
-        """Create a V1 asset (type project title description)"""
+        """Create a V1 asset with optional description, syntax:
+        .v1asset type project title[:description]"""
         if params:
-            type, project, title, desc = params.split(" ", 3)
+            type, project, content = params.split(" ", 2)
+            contents = content.split(":", 1)
+            title = contents[0]
+            desc = "TBD"
+            if len(contents) > 1:
+                desc = contents[1]
+            try:
+                project = self.projname.get_project_id(project)
+            except KeyError:
+                pass
             self._v1asset(type, project, title, desc)
         else:
             self.irc.reply(self.v1asset.__doc__)

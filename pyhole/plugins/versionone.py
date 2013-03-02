@@ -254,13 +254,12 @@ class VersionOne(plugin.Plugin):
     def v1liststories(self, params=None, **kwargs):
         status = ''
         try:
-            status, project_id = params.split(" ", 2)
+            project_id, status = params.split(" ", 1)
         except (AttributeError, ValueError):
-            self.irc.reply("Usage: .liststories <status> <project>")
+            self.irc.reply("Usage: .liststories <project> <status>")
 
         if status == 'None':
             status = ''
-        status = status.replace('-', ' ')
         try:
             project_id = self.projname.get_project_id(project_id)
         except KeyError:
@@ -338,6 +337,41 @@ class VersionOne(plugin.Plugin):
 	    username = nick
         member_id = self._get_v1_member_id(username)
         return member_id, asset
+
+    @plugin.hook_add_command("v1setstatus")
+    @utils.spawn
+    def v1setstatus(self, params=None, **kwargs):
+        """Set the status of a story, syntax:
+        .v1setstatus [<V1 story>] [status]"""
+        if params:
+            story, status = params.split(" ", 1)
+            status_id = self._get_storystatus_id(status)
+            self._update_story_status(status_id, story)
+            self.irc.reply("status set")
+        else:
+            self.irc.reply(self.v1setstatus.__doc__)
+
+    def _get_storystatus_id(self, status_name):
+        url = "%s/Data/StoryStatus?where=Name='%s'" % (self.versionone_url, status_name)
+        response = self.irc.fetch_url(url, self.name)
+        assets = etree.XML(response.read())
+        asset = assets.find('Asset')
+        id = asset.attrib['id']
+        return id
+
+    def _update_story_status(self, status_id, story):
+        url = self.versionone_baseurl + self._get_url_by_display_id(story)
+
+        root = etree.Element("Asset")
+        status = etree.Element("Relation", name="Status", act="set")
+        storystatus = etree.Element("Asset", idref=status_id)
+
+        root.append(status)
+        status.append(storystatus)
+
+        # Post to the appropriate api
+        data = etree.tostring(root)
+        return self.irc.post_url(url, data)
 
     def _v1asset(self, type, project, title, desc):
         response = self._create_asset(type, project, title, desc)

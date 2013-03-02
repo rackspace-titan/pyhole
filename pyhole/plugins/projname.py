@@ -21,7 +21,11 @@ from pyhole import utils
 
 
 class Projname(plugin.Plugin):
-    """Associates the project ID and name association"""
+    """Set or display project name to project ID mappings syntax:
+    .pn <sub_command> [project_name] [project_id]
+    .pn set servers 502342
+    .pn show servers
+    .pn list"""
 
     def __init__(self, irc):
         self.irc = irc
@@ -37,14 +41,13 @@ class Projname(plugin.Plugin):
     @plugin.hook_add_command("projname")
     @utils.spawn
     def projname(self, params=None, **kwargs):
-	mapping_file = self.mapping_file
-        """Display current weather report (ex: .pn [<sub_command>] [<project_id>] [<name>])"""
+        mapping_file = self.mapping_file
         if params:
             sub_command = params
             if sub_command.startswith("set "):
                 mapping = sub_command[4:].split()
-		project_id = mapping[0]
-		name = mapping[1]
+		name = mapping[0]
+		project_id = mapping[1]
 		data = {}
 		data[name] = project_id
 		json_data = json.dumps(data)

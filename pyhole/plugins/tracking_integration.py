@@ -23,7 +23,7 @@ from pyhole import plugin
 from pyhole import utils
 from pyhole.plugins import versionone
 from pyhole.plugins import launchpad
-
+from pyhole.plugins import projname
 
 class TrackingIntegration(plugin.Plugin):
 
@@ -32,6 +32,7 @@ class TrackingIntegration(plugin.Plugin):
         self.name = self.__class__.__name__
         self.version_one = versionone.VersionOne(irc)
         self.launchpad = launchpad.Launchpad(irc)
+	self.projname = projname.Projname(irc)
 
     @plugin.hook_add_command("importlp")
     @utils.spawn
@@ -74,7 +75,11 @@ class TrackingIntegration(plugin.Plugin):
         """Finds stories requiring reviews in the given project / scope
            usage: findreviews projectid"""
         if params:
-            project_id = params
+            project_id = None
+            try:
+                project_id = self.projname.get_project_id(params)
+            except KeyError:
+                project_id = params
             filters = {
                 "Scope": ("Scope:%s" % project_id),
                 "Links.Name": "Review"

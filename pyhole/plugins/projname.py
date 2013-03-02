@@ -94,5 +94,5 @@ class Projname(plugin.Plugin):
 
     @plugin.hook_add_command("pn")
     def alias_w(self, params=None, **kwargs):
-        """Alias of Proname"""
+        """Alias of Projname"""
         self.projname(params, **kwargs)

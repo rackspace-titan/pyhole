@@ -19,6 +19,7 @@ import traceback
 from lxml import etree
 
 from pyhole import plugin
+from pyhole.plugins import projname
 from pyhole import utils
 V1MAPPING = {'D':'Defect', 'E':'Epic', 'B':'Story'}
 
@@ -29,6 +30,7 @@ class VersionOne(plugin.Plugin):
         self.irc = irc
         self.name = self.__class__.__name__
         self.disabled = False
+        self.projname = projname.Projname(irc)
 
         try:
             self.versionone = utils.get_config("VersionOne")
@@ -217,8 +219,17 @@ class VersionOne(plugin.Plugin):
     def v1liststories(self, params=None, **kwargs):
         status = 'None'
         if params:
-            status, project_id = params.split(" ", 2)
+            try:
+                status, project_id = params.split(" ", 2)
+            except ValueError:
+                self.irc.reply("Usage: .liststories <status> <project>")
+
             status = status.replace('-', ' ')
+            try:
+                project_id = self.projname.get_project_id(project_id)
+            except KeyError:
+                pass
+
 
         url = "%s/Data/Story?where=Status.Name='%s';AssetState='64';Scope='Scope:%s'"
         url =  url % (self.versionone_url, status, project_id)

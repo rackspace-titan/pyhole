@@ -343,7 +343,7 @@ class VersionOne(plugin.Plugin):
     @utils.spawn
     def v1setstatus(self, params=None, **kwargs):
         """Set the status of a story, syntax:
-        .visetstatus [<V1 story>] [status]"""
+        .v1setstatus [<V1 story>] [status]"""
         if params:
             story, status = params.split(" ", 1)
             status_id = self._get_storystatus_id(status)

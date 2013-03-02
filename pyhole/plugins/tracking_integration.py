@@ -68,3 +68,26 @@ class TrackingIntegration(plugin.Plugin):
         else:
             self.irc.reply(self.addreview.__doc__)
 
+    @plugin.hook_add_command("findreviews")
+    @utils.spawn
+    def findreviews(self, params=None, **kwargs):
+        """Finds stories requiring reviews in the given project / scope
+           usage: findreviews projectid"""
+        if params:
+            project_id = params
+            filters = {
+                "Scope": ("Scope:%s" % project_id),
+                "Links.Name": "Review"
+                }
+
+            assets = self.version_one._filter_assets("Story", sel="Links,Name,Number,Status.Name,Owners.Name,Links.URL", filters=filters)
+            for elt in assets.iterchildren('Asset'):
+                self.irc.reply(self.version_one._format_asset_msg("Story", elt))
+                review_names = [value.text for value in elt.xpath("Attribute[@name='Links.Name']")[0].iterchildren('Value')]
+                review_links = [value.text for value in elt.xpath("Attribute[@name='Links.URL']")[0].iterchildren('Value')]
+                for i in range(len(review_names)):
+                    name = review_names[i]
+                    if name == "Review":
+                        self.irc.reply("%s: %s" % (name, review_links[i]))
+        else:
+            self.irc.reply(self.findreviews.__doc__)

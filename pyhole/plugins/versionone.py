@@ -117,18 +117,22 @@ class VersionOne(plugin.Plugin):
         try:
             root = etree.XML(response.read())
             asset = root.find("Asset")
-            id = asset.attrib['id']
-            subject = asset.find('Attribute[@name="Name"]').text
-            number = asset.find('Attribute[@name="Number"]').text
-            status = asset.find('Attribute[@name="Status.Name"]')
-            if status is not None:
-                status = status.text
-            owner = asset.find('Attribute[@name="Owners.Name"]/Value')
-            if owner is not None:
-                owner = owner.text
+            msg = self._format_asset_msg(type, asset)
+            self.irc.reply(msg)
         except Exception:
             traceback.print_exc()
             return
+
+    def _format_asset_msg(self, type, asset):
+        id = asset.attrib['id']
+        subject = asset.find('Attribute[@name="Name"]').text
+        number = asset.find('Attribute[@name="Number"]').text
+        status = asset.find('Attribute[@name="Status.Name"]')
+        if status is not None:
+            status = status.text
+        owner = asset.find('Attribute[@name="Owners.Name"]/Value')
+        if owner is not None:
+            owner = owner.text
 
         msg = "V1 %s %s: %s" % (type, number, subject)
 
@@ -144,8 +148,7 @@ class VersionOne(plugin.Plugin):
         msg += " https://%s/%s/%s.mvc/Summary?oidToken=%s" % (
                 self.versionone_domain, self.versionone_key,
                 type, id)
-
-        self.irc.reply(msg)
+        return msg
 
     def _retrieve_asset_attributes(self, type, number, fieldlist):
         """Gets a v1 asset and returns the fields from fieldlist"""
@@ -259,3 +262,25 @@ class VersionOne(plugin.Plugin):
         url = "%s/Data/Link" % self.versionone_url
         data = etree.tostring(root)
         return self.irc.post_url(url, data)
+
+    def _filter_assets(self, type, sel=None, filters=None):
+        url = "%s/Data/%s" % (self.versionone_url, type)
+
+        queries = []
+
+        if sel:
+            queries.append("sel=%s" % sel)
+
+        if filters:
+            clauses = ["%s='%s'" % (key, value) for key, value in filters.iteritems()]
+            queries.append("where=%s" % ";".join(clauses))
+
+        if queries:
+            query = "&".join(queries)
+            url = "%s?%s" % (url, query)
+
+        print "URL: %s" % url
+
+        response = self.irc.fetch_url(url, self.name)
+        assets = etree.XML(response.read())
+        return assets

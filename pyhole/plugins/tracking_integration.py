@@ -44,7 +44,7 @@ class TrackingIntegration(plugin.Plugin):
             # We have info about the task now, lets import it into v1
             task = bug.bug_tasks[len(bug.bug_tasks) - 1]
             # Append the launchpad id
-            desc = "<p>%s</p> <p>&nbsp;</p> <p>%s</p>" % (bug.description, 
+            desc = "<p>%s</p> <p>&nbsp;</p> <p>%s</p>" % (bug.description,
                                                           task.web_link)
             self.version_one._v1asset('Defect', v1project, bug.title, desc)
         else:
@@ -53,7 +53,7 @@ class TrackingIntegration(plugin.Plugin):
     @plugin.hook_add_command("addreview")
     @utils.spawn
     def addreview(self, params=None, **kwargs):
-        """Adds a gerrit review link to the V1 bug/story 
+        """Adds a gerrit review link to the V1 bug/story
            usage: addreview Defect|Story v1id gerritreview"""
         if params:
             v1id, gerritreview = params.split(" ", 2)
@@ -82,7 +82,8 @@ class TrackingIntegration(plugin.Plugin):
                 project_id = params
             filters = {
                 "Scope": ("Scope:%s" % project_id),
-                "Links.Name": "Review"
+                "Links.Name": "Review",
+                "AssetState": "64",
                 }
 
             assets = self.version_one._filter_assets("Story", sel="Links,Name,Number,Status.Name,Owners.Name,Links.URL", filters=filters)

@@ -20,8 +20,10 @@ from lxml import etree
 
 from pyhole import plugin
 from pyhole.plugins import projname
+from pyhole.plugins import v1ircnick
 from pyhole import utils
-V1MAPPING = {'D':'Defect', 'E':'Epic', 'B':'Story'}
+
+V1MAPPING = {'D':'Defect', 'E':'Epic', 'B':'Story', 'TK':'Task'}
 
 class VersionOne(plugin.Plugin):
     """Provide access to the VersionOne API"""
@@ -45,6 +47,8 @@ class VersionOne(plugin.Plugin):
                     "rest-1.v1") % (
                     self.versionone_username, self.versionone_password,
                     self.versionone_domain, self.versionone_key)
+            self.v1ircnick = v1ircnick.V1ircnick(irc)
+
         except Exception:
             self.disabled = True
 
@@ -185,6 +189,35 @@ class VersionOne(plugin.Plugin):
             traceback.print_exc()
             return
 
+    def _get_v1_member_id(self, username):
+        """Gets a v1 asset and returns the fields from fieldlist"""
+        url = "%s/Data/Member?where=Username='%s'" % (self.versionone_url, username)
+        response = self.irc.fetch_url(url, self.name)
+        if not response:
+            return
+
+        try:
+            root = etree.XML(response.read())
+            asset = root.find("Asset")
+            return asset.attrib['id']
+        except Exception:
+            traceback.print_exc()
+            return
+
+    def _assign_or_unassign_v1_asset(self, member_id, elem, act):
+        url = self.versionone_baseurl + self._get_url_by_display_id(elem)
+
+        root = etree.Element("Asset")
+        owners = etree.Element("Relation", name="Owners")
+	owner = etree.Element("Asset", idref=member_id, act=act)
+
+        root.append(owners)
+        owners.append(owner)
+
+        # Post to the appropriate api
+        data = etree.tostring(root)
+        return self.irc.post_url(url, data)
+
     def _change_state(self, url, op):
         print self.versionone_url
         resp = self.irc.post_url(self.versionone_baseurl + url + "?op=" + op, "")
@@ -261,7 +294,50 @@ class VersionOne(plugin.Plugin):
             type, project, title, desc = params.split(" ", 3)
             self._v1asset(type, project, title, desc)
         else:
-            self.irc.reply(self.asset.__doc__)
+            self.irc.reply(self.v1asset.__doc__)
+
+    @plugin.hook_add_command("v1assign")
+    @utils.spawn
+    def v1assign(self, params=None, **kwargs):
+        """Assign a asset to a IRC nick or V1 user, syntax:
+        .v1assignnick [<nick/user>] [V1 story]
+        .v1assignnick [<nick/user>] [V1 task]
+        .v1assignnick [<nick/user>] [V1 epic]
+        .v1assignnick [<nick/user>] [V1 issue]
+        """
+        if params:
+            member_id, asset = self._parse_assign_unassign_params(params)
+            self._assign_or_unassign_v1_asset(member_id, asset, "add")
+            self.irc.reply("Assigned")
+        else:
+            self.irc.reply(self.v1assignstory.__doc__)
+
+    @plugin.hook_add_command("v1unassign")
+    @utils.spawn
+    def v1unassign(self, params=None, **kwargs):
+        """Unassign a IRC nick or V1 user from an asset, syntax:
+        .v1assignnick [<nick/user>] [V1 story]
+        .v1assignnick [<nick/user>] [V1 task]
+        .v1assignnick [<nick/user>] [V1 epic]
+        .v1assignnick [<nick/user>] [V1 issue]
+        """
+        if params:
+            member_id, asset = self._parse_assign_unassign_params(params)
+            self._assign_or_unassign_v1_asset(member_id, asset, "remove")
+            self.irc.reply("Unassigned")
+        else:
+            self.irc.reply(self.v1assignstory.__doc__)
+
+    def _parse_assign_unassign_params(self, params):
+        """Helper method to parse the assign or assign methods"""
+        data = params.split()
+        nick = data[0]
+        asset = data[1]
+        username = self.v1ircnick.get_v1_username("show %s" % nick)
+        if not username:
+	    username = nick
+        member_id = self._get_v1_member_id(username)
+        return member_id, asset
 
     def _v1asset(self, type, project, title, desc):
         response = self._create_asset(type, project, title, desc)

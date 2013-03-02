@@ -219,18 +219,19 @@ class VersionOne(plugin.Plugin):
     @plugin.hook_add_command("liststories")
     @utils.spawn
     def v1liststories(self, params=None, **kwargs):
-        status = 'None'
-        if params:
-            try:
-                status, project_id = params.split(" ", 2)
-            except ValueError:
-                self.irc.reply("Usage: .liststories <status> <project>")
+        status = ''
+        try:
+            status, project_id = params.split(" ", 2)
+        except (AttributeError, ValueError):
+            self.irc.reply("Usage: .liststories <status> <project>")
 
-            status = status.replace('-', ' ')
-            try:
-                project_id = self.projname.get_project_id(project_id)
-            except KeyError:
-                pass
+        if status == 'None':
+            status = ''
+        status = status.replace('-', ' ')
+        try:
+            project_id = self.projname.get_project_id(project_id)
+        except KeyError:
+            pass
 
 
         url = "%s/Data/Story?where=Status.Name='%s';AssetState='64';Scope='Scope:%s'"

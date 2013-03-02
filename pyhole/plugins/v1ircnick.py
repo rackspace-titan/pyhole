@@ -56,6 +56,10 @@ class V1ircnick(plugin.Plugin):
 		key, value = mapping_utils.assign(self.name, self.mapping_file, sub_command)
                 self.irc.reply("IRC nick and V1 username association saved as %s <-> %s" % (key, value))
 
+            if sub_command.startswith("unset "):
+		key, value = mapping_utils.unassign(self.name, self.mapping_file, sub_command)
+                self.irc.reply("unassigned IRC nick %s and V1 username %s association" % (key, value))
+
             if sub_command.startswith("show "):
                 key, value = mapping_utils.show(self.name, self.mapping_file, sub_command)
                 if not value:

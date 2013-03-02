@@ -48,6 +48,24 @@ def show(plugin_dir, mapping_file, sub_command):
     return key, value
 
 
+def unassign(plugin_dir, mapping_file, sub_command):
+    #TODO: cleaner docstring
+    """Sets the mapping of key, value pair"""
+    mapping = sub_command[6:].split()
+    key = mapping[0]
+    value = mapping[1]
+    data = {}
+    data[key] = value
+	
+    #check if the mapping file exists
+    if utils.check_file_exists(plugin_dir, mapping_file):
+        data_file = utils.read_file(plugin_dir, mapping_file)
+        json_data = json.loads(data_file)
+        del json_data[key]
+        utils.write_file(plugin_dir, mapping_file, json.dumps(json_data))
+
+    return key, value
+
 def assign(plugin_dir, mapping_file, sub_command):
     #TODO: cleaner docstring
     """Sets the mapping of key, value pair"""
@@ -69,4 +87,4 @@ def assign(plugin_dir, mapping_file, sub_command):
         # if the file does not exist, create a new one and add the mapping
         utils.write_file(plugin_dir, mapping_file, json_data)
 
-        return key, value
+    return key, value

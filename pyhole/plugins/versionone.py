@@ -36,6 +36,9 @@ class VersionOne(plugin.Plugin):
             self.versionone_key = self.versionone.get("key")
             self.versionone_username = self.versionone.get("username")
             self.versionone_password = self.versionone.get("password")
+            self.versionone_baseurl = ("https://%s:%s@%s/") % (
+                    self.versionone_username, self.versionone_password,
+                    self.versionone_domain)
             self.versionone_url = ("https://%s:%s@%s/%s/VersionOne/"
                     "rest-1.v1") % (
                     self.versionone_username, self.versionone_password,
@@ -106,8 +109,8 @@ class VersionOne(plugin.Plugin):
             if params:
                 self._find_asset("Issue", "I-%s" % params)
 
-    def _find_asset(self, type, number):
-        """Find and display a VersionOne object"""
+    def _get_root_asset(self, type, number):
+        """Find a VersionOne object"""
         url = "%s/Data/%s?where=Number='%s'" % (self.versionone_url,
                                                 type, number)
         response = self.irc.fetch_url(url, self.name)
@@ -115,7 +118,16 @@ class VersionOne(plugin.Plugin):
             return
 
         try:
-            root = etree.XML(response.read())
+            return etree.XML(response.read())
+        except Exception:
+            traceback.print_exc()
+            return
+
+
+    def _find_asset(self, type, number):
+        """Find and display a VersionOne object"""
+        try:
+            root = self._get_root_asset(type, number)
             asset = root.find("Asset")
             msg = self._format_asset_msg(type, asset)
             self.irc.reply(msg)
@@ -167,6 +179,32 @@ class VersionOne(plugin.Plugin):
             traceback.print_exc()
             return
 
+    def _change_state(self, url, op):
+        print self.versionone_url
+        resp = self.irc.post_url(self.versionone_baseurl + url + "?op=" + op, "")
+        for line in resp.readlines():
+            print line
+
+    @plugin.hook_add_command("v1close")
+    @utils.spawn
+    def v1close(self, params=None, **kwargs):
+        """close stuff!"""
+        if params:
+            story = params.split(" ", 1)[0]
+            self._change_state(self._get_url_by_display_id(story), "Inactivate")
+        else:
+            self.irc.reply(self.v1close.__doc__)
+        
+    @plugin.hook_add_command("v1open")
+    @utils.spawn
+    def v1open(self, params=None, **kwargs):
+        """open stuff!"""
+        if params:
+            story = params.split(" ", 1)[0]
+            self._change_state(self._get_url_by_display_id(story), "Reactivate")
+        else:
+            self.irc.reply(self.v1close.__doc__)
+
     @plugin.hook_add_command("v1asset")
     @utils.spawn
     def v1asset(self, params=None, **kwargs):
@@ -212,13 +250,24 @@ class VersionOne(plugin.Plugin):
         data = etree.tostring(root)
         return self.irc.post_url(url, data)
 
+    def _get_url_by_display_id(self, display_id):
+        """"Gets the URL from the Display ID"""
+        try:
+            type = V1MAPPING[display_id[:display_id.index("-")]]
+            assets = self._get_root_asset(type, display_id)
+            return assets[0].get('href')
+        except Exception:
+            traceback.print_exc()
+            return
+        
+
     def _get_display_id(self, type, v1id):
         """Gets the Display ID from the actual v1 ID"""
         url = "%s/Data/%s/%s" % (self.versionone_url,
                                                 type, v1id)
         response = self.irc.fetch_url(url, self.name)
         asset = etree.XML(response.read())
-        return asset.find('Attribute[@name="Number"]').text
+        return asset.find('Attribute[@name="Number"]').text        
 
     def _update(self, type, v1id, attrname, attrtext):
         root = etree.Element("Asset")

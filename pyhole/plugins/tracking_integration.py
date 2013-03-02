@@ -75,7 +75,11 @@ class TrackingIntegration(plugin.Plugin):
         """Finds stories requiring reviews in the given project / scope
            usage: findreviews projectid"""
         if params:
-            project_id = self.projname.get_project_id(params)
+            project_id = None
+            try:
+                project_id = self.projname.get_project_id(params)
+            except KeyError:
+                project_id = params
             filters = {
                 "Scope": ("Scope:%s" % project_id),
                 "Links.Name": "Review"

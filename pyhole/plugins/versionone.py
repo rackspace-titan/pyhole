@@ -19,6 +19,7 @@ import traceback
 from lxml import etree
 
 from pyhole import plugin
+from pyhole.plugins import projname
 from pyhole import utils
 V1MAPPING = {'D':'Defect', 'E':'Epic', 'B':'Story'}
 
@@ -29,6 +30,7 @@ class VersionOne(plugin.Plugin):
         self.irc = irc
         self.name = self.__class__.__name__
         self.disabled = False
+        self.projname = projname.Projname(irc)
 
         try:
             self.versionone = utils.get_config("VersionOne")
@@ -157,10 +159,14 @@ class VersionOne(plugin.Plugin):
         if attrs:
             msg += " [%s]" % ", ".join(attrs)
 
-        msg += " https://%s/%s/%s.mvc/Summary?oidToken=%s" % (
+        msg += self._get_link_to_asset(type, id)
+        return msg
+
+    def _get_link_to_asset(self, type, id):
+        return" https://%s/%s/%s.mvc/Summary?oidToken=%s" % (
                 self.versionone_domain, self.versionone_key,
                 type, id)
-        return msg
+
 
     def _retrieve_asset_attributes(self, type, number, fieldlist):
         """Gets a v1 asset and returns the fields from fieldlist"""
@@ -206,9 +212,7 @@ class VersionOne(plugin.Plugin):
             self.irc.reply(self.v1close.__doc__)
 
     def _parse_story_asset(self, asset, fieldlist):
-        url= "https://%s/%s/%s.mvc/Summary?oidToken=%s" % (
-                self.versionone_domain, self.versionone_key,
-                'Story', asset.attrib['id'].replace(':', '%3A'))
+        url = self._get_link_to_asset('Story', asset.attrib['id'].replace(':', '%3A'))
         return str([asset.find('Attribute[@name="%s"]' % field).text for field in fieldlist] + [url])
 
 
@@ -217,8 +221,17 @@ class VersionOne(plugin.Plugin):
     def v1liststories(self, params=None, **kwargs):
         status = 'None'
         if params:
-            status, project_id = params.split(" ", 2)
+            try:
+                status, project_id = params.split(" ", 2)
+            except ValueError:
+                self.irc.reply("Usage: .liststories <status> <project>")
+
             status = status.replace('-', ' ')
+            try:
+                project_id = self.projname.get_project_id(project_id)
+            except KeyError:
+                pass
+
 
         url = "%s/Data/Story?where=Status.Name='%s';AssetState='64';Scope='Scope:%s'"
         url =  url % (self.versionone_url, status, project_id)

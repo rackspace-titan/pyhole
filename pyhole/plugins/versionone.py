@@ -254,13 +254,12 @@ class VersionOne(plugin.Plugin):
     def v1liststories(self, params=None, **kwargs):
         status = ''
         try:
-            status, project_id = params.split(" ", 2)
+            project_id, status = params.split(" ", 1)
         except (AttributeError, ValueError):
-            self.irc.reply("Usage: .liststories <status> <project>")
+            self.irc.reply("Usage: .liststories <project> <status>")
 
         if status == 'None':
             status = ''
-        status = status.replace('-', ' ')
         try:
             project_id = self.projname.get_project_id(project_id)
         except KeyError:

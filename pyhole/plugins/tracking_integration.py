@@ -40,12 +40,17 @@ class TrackingIntegration(plugin.Plugin):
         """Import launchpad bug into V1 importlp <lpbugnumber> <v1project>"""
         if params:
             lpid, v1project = params.split(" ", 2)
-            bug = self.launchpad.launchpad.bugs[params]
+            try:
+                v1project = self.projname.get_project_id(v1project)
+            except KeyError:
+                pass
+            bug = self.launchpad.launchpad.bugs[lpid]
             # We have info about the task now, lets import it into v1
             task = bug.bug_tasks[len(bug.bug_tasks) - 1]
             # Append the launchpad id
             desc = "<p>%s</p> <p>&nbsp;</p> <p>%s</p>" % (bug.description,
                                                           task.web_link)
+            desc = desc.replace("\n","<br>")
             self.version_one._v1asset('Defect', v1project, bug.title, desc)
         else:
             self.irc.reply(self.importlp.__doc__)

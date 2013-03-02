@@ -299,10 +299,10 @@ class VersionOne(plugin.Plugin):
     @utils.spawn
     def v1assign(self, params=None, **kwargs):
         """Assign a asset to a IRC nick or V1 user, syntax:
-        .v1assignnick [<nick/user>] [V1 story]
-        .v1assignnick [<nick/user>] [V1 task]
-        .v1assignnick [<nick/user>] [V1 epic]
-        .v1assignnick [<nick/user>] [V1 issue]
+        .v1assignnick [V1 story] [<nick/user> 
+        .v1assignnick [V1 task] [<nick/user> 
+        .v1assignnick [V1 epic] [<nick/user>]
+        .v1assignnick [V1 issue] [<nick/user>]
         """
         if params:
             member_id, asset = self._parse_assign_unassign_params(params)
@@ -315,10 +315,10 @@ class VersionOne(plugin.Plugin):
     @utils.spawn
     def v1unassign(self, params=None, **kwargs):
         """Unassign a IRC nick or V1 user from an asset, syntax:
-        .v1assignnick [<nick/user>] [V1 story]
-        .v1assignnick [<nick/user>] [V1 task]
-        .v1assignnick [<nick/user>] [V1 epic]
-        .v1assignnick [<nick/user>] [V1 issue]
+        .v1unassignnick [V1 story] [<nick/user> 
+        .v1unassignnick [V1 task] [<nick/user> 
+        .v1unassignnick [V1 epic] [<nick/user>]
+        .v1unassignnick [V1 issue] [<nick/user>]
         """
         if params:
             member_id, asset = self._parse_assign_unassign_params(params)
@@ -330,8 +330,8 @@ class VersionOne(plugin.Plugin):
     def _parse_assign_unassign_params(self, params):
         """Helper method to parse the assign or assign methods"""
         data = params.split()
-        nick = data[0]
-        asset = data[1]
+        asset = data[0]
+        nick = data[1]
         username = self.v1ircnick.get_v1_username("show %s" % nick)
         if not username:
 	    username = nick

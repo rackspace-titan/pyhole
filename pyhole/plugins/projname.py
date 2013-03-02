@@ -103,7 +103,7 @@ class Projname(plugin.Plugin):
                     self.irc.reply("%s <-> %s" % (name, project_id))
             
             else:
-                self.irc.reply("Usage .pn [<sub_command>] [<project_id>] [<name>]")
+                self.irc.reply("Usage .pn [<sub_command>] [<project_name>] [<project_id>]")
                 return
 
     @plugin.hook_add_command("pn")

@@ -159,10 +159,14 @@ class VersionOne(plugin.Plugin):
         if attrs:
             msg += " [%s]" % ", ".join(attrs)
 
-        msg += " https://%s/%s/%s.mvc/Summary?oidToken=%s" % (
+        msg += self._get_link_to_asset(type, id)
+        return msg
+
+    def _get_link_to_asset(self, type, id):
+        return" https://%s/%s/%s.mvc/Summary?oidToken=%s" % (
                 self.versionone_domain, self.versionone_key,
                 type, id)
-        return msg
+
 
     def _retrieve_asset_attributes(self, type, number, fieldlist):
         """Gets a v1 asset and returns the fields from fieldlist"""
@@ -208,9 +212,7 @@ class VersionOne(plugin.Plugin):
             self.irc.reply(self.v1close.__doc__)
 
     def _parse_story_asset(self, asset, fieldlist):
-        url= "https://%s/%s/%s.mvc/Summary?oidToken=%s" % (
-                self.versionone_domain, self.versionone_key,
-                'Story', asset.attrib['id'].replace(':', '%3A'))
+        url = self._get_link_to_asset('Story', asset.attrib['id'].replace(':', '%3A'))
         return str([asset.find('Attribute[@name="%s"]' % field).text for field in fieldlist] + [url])
 
 

@@ -65,7 +65,7 @@ class Projname(plugin.Plugin):
                     string_data = json.dumps(data)
 
                 utils.write_file(self.name, mapping_file, string_data)
-                self.irc.reply("name and Project ID association saved as %s <-> %s" % (name, json_data[name]))
+                self.irc.reply("name and Project ID association saved as %s <-> %s" % (name, project_id))
 
             elif sub_command.startswith("unset "):
                 mapping = sub_command[6:].split()
@@ -75,9 +75,11 @@ class Projname(plugin.Plugin):
                 if utils.check_file_exists(self.name, mapping_file):
                     data_file = utils.read_file(self.name, mapping_file)
                     json_data = json.loads(data_file)
+                    project_id = json_data[name]
                     del json_data[name]
                     string_data = json.dumps(json_data)
                     utils.write_file(self.name, mapping_file, string_data)
+                    self.irc.reply("name %s <-> Project ID %s association removed  %s <-> %s" % (name, project_id))
 
             elif sub_command.startswith("show "):
                 mapping = sub_command[5:].split()

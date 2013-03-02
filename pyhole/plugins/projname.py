@@ -21,75 +21,92 @@ from pyhole import utils
 
 
 class Projname(plugin.Plugin):
-    """Associates the project ID and name association"""
+    """Set or display project name to project ID mappings syntax:
+    .pn <sub_command> [project_name] [project_id]
+    .pn set servers 502342
+    .pn show servers
+    .pn unset servers
+    .pn list"""
 
     def __init__(self, irc):
         self.irc = irc
         self.name = self.__class__.__name__
-	self.mapping_file = "projname"
+        self.mapping_file = "projname"
 
     def get_project_id(self, name):
-	data_file = utils.read_file(self.name, self.mapping_file)
-	json_data = json.loads(data_file)
-	project_id = json_data[name]
-	return project_id
-	
+        data_file = utils.read_file(self.name, self.mapping_file)
+        json_data = json.loads(data_file)
+        project_id = json_data[name]
+        return project_id
+    
     @plugin.hook_add_command("projname")
     @utils.spawn
     def projname(self, params=None, **kwargs):
-	mapping_file = self.mapping_file
-        """Display current weather report (ex: .pn [<sub_command>] [<project_id>] [<name>])"""
+        mapping_file = self.mapping_file
         if params:
             sub_command = params
             if sub_command.startswith("set "):
                 mapping = sub_command[4:].split()
-		project_id = mapping[0]
-		name = mapping[1]
-		data = {}
-		data[name] = project_id
-		json_data = json.dumps(data)
-		
-		#check if the mapping file exists
-		if utils.check_file_exists(self.name, mapping_file):
-			data_file = utils.read_file(self.name, mapping_file)
-			json_data = json.loads(data_file)
-			json_data[name] = project_id
-	                utils.write_file(self.name, mapping_file, json.dumps(json_data))
-                	self.irc.reply("name and Project ID association saved as %s <-> %s" % (name, json_data[name]))
+                name = mapping[0]
+                project_id = mapping[1]
+                string_data = None
 
-		# if the file does not exist, create a new one and add the mapping
-		else:
-	                utils.write_file(self.name, mapping_file, json_data)
-                	self.irc.reply("name and Project ID association saved as %s <-> %s" % (name, project_id))
+                #check if the mapping file exists
+                if utils.check_file_exists(self.name, mapping_file):
+                    data_file = utils.read_file(self.name, mapping_file)
+                    json_data = json.loads(data_file)
+                    json_data[name] = project_id
+                    string_data = json.dumps(json_data)
 
-            if sub_command.startswith("show "):
+                # if the file does not exist, create a new one and add the mapping
+                else:
+                    data = {}
+                    data[name] = project_id
+                    string_data = json.dumps(data)
+
+                utils.write_file(self.name, mapping_file, string_data)
+                self.irc.reply("name and Project ID association saved as %s <-> %s" % (name, json_data[name]))
+
+            elif sub_command.startswith("unset "):
+                mapping = sub_command[6:].split()
+                name = mapping[0]
+
+                #check if the mapping file exists, else return with appropriate message
+                if utils.check_file_exists(self.name, mapping_file):
+                    data_file = utils.read_file(self.name, mapping_file)
+                    json_data = json.loads(data_file)
+                    del json_data[name]
+                    string_data = json.dumps(json_data)
+                    utils.write_file(self.name, mapping_file, string_data)
+
+            elif sub_command.startswith("show "):
                 mapping = sub_command[5:].split()
-		name = mapping[0]
+                name = mapping[0]
 
-		#check if the mapping file exists, else return with appropriate message
-		if not utils.check_file_exists(self.name, mapping_file):
-            	    self.irc.reply("There is no association with any project ID for the given name %s" % name)
-            	    return
+                #check if the mapping file exists, else return with appropriate message
+                if not utils.check_file_exists(self.name, mapping_file):
+                    self.irc.reply("There is no association with any project ID for the given name %s" % name)
+                    return
 
-		project_id = self.get_project_id(name) 
-                self.irc.reply("name %s <-> Project ID %s" % (name, project_id))
+                project_id = self.get_project_id(name) 
+                self.irc.reply("%s <-> %s" % (name, project_id))
 
-            if sub_command.startswith("list"):
-		if not utils.check_file_exists(self.name, mapping_file):
-            	    self.irc.reply("There are no associations for any name project ID")
-            	    return
+            elif sub_command.startswith("list"):
+                if not utils.check_file_exists(self.name, mapping_file):
+                    self.irc.reply("There are no associations for any name project ID")
+                    return
 
-	        data_file = utils.read_file(self.name, mapping_file)
-		json_data = json.loads(data_file)
+                data_file = utils.read_file(self.name, mapping_file)
+                json_data = json.loads(data_file)
                 self.irc.reply("name <-> Project ID")
-		for name, project_id in json_data.iteritems():
-                	self.irc.reply("%s <-> %s" % (name, project_id))
-			
-        else:
+                for name, project_id in json_data.iteritems():
+                    self.irc.reply("%s <-> %s" % (name, project_id))
+            
+            else:
                 self.irc.reply("Usage .pn [<sub_command>] [<project_id>] [<name>]")
                 return
 
     @plugin.hook_add_command("pn")
     def alias_w(self, params=None, **kwargs):
-        """Alias of Proname"""
+        """Alias of Projname"""
         self.projname(params, **kwargs)

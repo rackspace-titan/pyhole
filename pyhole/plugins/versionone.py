@@ -194,7 +194,7 @@ class VersionOne(plugin.Plugin):
             self._change_state(self._get_url_by_display_id(story), "Inactivate")
         else:
             self.irc.reply(self.v1close.__doc__)
-        
+
     @plugin.hook_add_command("v1open")
     @utils.spawn
     def v1open(self, params=None, **kwargs):
@@ -204,6 +204,40 @@ class VersionOne(plugin.Plugin):
             self._change_state(self._get_url_by_display_id(story), "Reactivate")
         else:
             self.irc.reply(self.v1close.__doc__)
+
+    def _parse_story_asset(self, asset, fieldlist):
+        url= "https://%s/%s/%s.mvc/Summary?oidToken=%s" % (
+                self.versionone_domain, self.versionone_key,
+                'Story', asset.attrib['id'].replace(':', '%3A'))
+        return str([asset.find('Attribute[@name="%s"]' % field).text for field in fieldlist] + [url])
+
+
+    @plugin.hook_add_command("liststories")
+    @utils.spawn
+    def v1liststories(self, params=None, **kwargs):
+        status = 'None'
+        if params:
+            status, project_id = params.split(" ", 2)
+            status = status.replace('-', ' ')
+
+        url = "%s/Data/Story?where=Status.Name='%s';AssetState='64';Scope='Scope:%s'"
+        url =  url % (self.versionone_url, status, project_id)
+
+        response = self.irc.fetch_url(url, self.name)
+        if not response:
+            return
+
+        try:
+            root = etree.XML(response.read())
+            assets = root.findall('Asset')
+            to_print = ""
+            for asset in assets:
+                to_print += self._parse_story_asset(asset, ['Name']) + "\n"
+        except Exception:
+            traceback.print_exc()
+            return
+
+        self.irc.reply(str(to_print))
 
     @plugin.hook_add_command("v1asset")
     @utils.spawn
@@ -244,7 +278,7 @@ class VersionOne(plugin.Plugin):
         root.append(name)
         root.append(scope)
         root.append(desc)
-        
+
         # Post to the appropriate api
         url = "%s/Data/%s" % (self.versionone_url, type)
         data = etree.tostring(root)
@@ -259,7 +293,7 @@ class VersionOne(plugin.Plugin):
         except Exception:
             traceback.print_exc()
             return
-        
+
 
     def _get_display_id(self, type, v1id):
         """Gets the Display ID from the actual v1 ID"""
@@ -267,7 +301,7 @@ class VersionOne(plugin.Plugin):
                                                 type, v1id)
         response = self.irc.fetch_url(url, self.name)
         asset = etree.XML(response.read())
-        return asset.find('Attribute[@name="Number"]').text        
+        return asset.find('Attribute[@name="Number"]').text
 
     def _update(self, type, v1id, attrname, attrtext):
         root = etree.Element("Asset")
@@ -306,7 +340,7 @@ class VersionOne(plugin.Plugin):
         root.append(url_elt)
         root.append(asset_link_elt)
         root.append(onmenu_elt)
-        
+
         # Post to the appropriate api
         url = "%s/Data/Link" % self.versionone_url
         data = etree.tostring(root)

@@ -35,6 +35,11 @@ class V1ircnick(plugin.Plugin):
 	self.irc.reply(".v1i show [<IRC nick>]")
 	self.irc.reply(".v1i list")
 
+    def get_v1_username(self, sub_command):
+        """Retrieves the V1 username assciated with the IRC nick"""
+        key, value = mapping_utils.show(self.name, self.mapping_file, sub_command)
+        return value
+
     @plugin.hook_add_command("v1ircnick")
     @utils.spawn
     def v1ircnick(self, params=None, **kwargs):
@@ -71,7 +76,7 @@ class V1ircnick(plugin.Plugin):
 		self.help_display()
 			
         else:
-		self.help_display()
+                self.irc.reply(self.v1ircnick.__doc__)
                 return
 
     @plugin.hook_add_command("v1i")

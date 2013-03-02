@@ -365,7 +365,7 @@ class VersionOne(plugin.Plugin):
 
         root = etree.Element("Asset")
         status = etree.Element("Relation", name="Status", act="set")
-	storystatus = etree.Element("Asset", idref=status_id)
+        storystatus = etree.Element("Asset", idref=status_id)
 
         root.append(status)
         status.append(storystatus)

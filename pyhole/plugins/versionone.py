@@ -151,6 +151,7 @@ class VersionOne(plugin.Plugin):
         """Gets a v1 asset and returns the fields from fieldlist"""
         url = "%s/Data/%s?where=Number='%s'" % (self.versionone_url,
                                                 type, number)
+
         response = self.irc.fetch_url(url, self.name)
         if not response:
             return
@@ -227,5 +228,34 @@ class VersionOne(plugin.Plugin):
         data = etree.tostring(root)
         print data
         return self.irc.post_url(url, data)
+
+    def _create_link(self, name, url, link, onmenu=False):
+        """Create a new V1 link (ex)
+        example:
+          <Asset>
+                <Attribute name="URL" act="set">http://www.google.com</Attribute>
+                <Attribute name="Name" act="set">test-api</Attribute>
+                <Attribute name="OnMenu" act="set">false</Attribute>
+                <Attribute name="Asset" act="set">Story:539391</Attribute>
+          </Asset>
+        """
+        # Create the asset xml
+        root = etree.Element("Asset")
+        name_elt = etree.Element("Attribute", name="Name", act="set")
+        name_elt.text = name
+        url_elt = etree.Element("Attribute", name="URL", act="set")
+        url_elt.text = url
+        asset_link_elt = etree.Element("Attribute", name="Asset", act="set")
+        asset_link_elt.text = link
+        onmenu_elt = etree.Element("Attribute", name="OnMenu", act="set")
+        onmenu_elt.text = str(onmenu)
+
+        root.append(name_elt)
+        root.append(url_elt)
+        root.append(asset_link_elt)
+        root.append(onmenu_elt)
         
-        
+        # Post to the appropriate api
+        url = "%s/Data/Link" % self.versionone_url
+        data = etree.tostring(root)
+        return self.irc.post_url(url, data)

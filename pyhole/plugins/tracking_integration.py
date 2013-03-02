@@ -60,12 +60,11 @@ class TrackingIntegration(plugin.Plugin):
             type = versionone.V1MAPPING[typestr]
             # attrs always returns the v1id
             v1attrs = self.version_one._retrieve_asset_attributes(type,
-                                                                   v1id, 
-                                                                   ['Description'])
-            desc = "%s <p>&nbsp;</p> <p>%s</p>" % (v1attrs[1],
-                                                          gerritreview)
-            # Get the v1 id from Defect:BLAH
-            v1id = v1attrs[0].split(":")[1]
-            self.version_one._update(type, v1id, "Description", desc)
+                                                                  v1id,
+                                                                  [])
+            # Get the v1 oid in the form Defect:BLAH
+            link = v1attrs[0]
+            self.version_one._create_link("Review", gerritreview, link)
         else:
-            self.irc.reply(self.importlp.__doc__)
+            self.irc.reply(self.addreview.__doc__)
+

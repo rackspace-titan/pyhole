@@ -142,6 +142,8 @@ class VersionOne(plugin.Plugin):
             return
 
     def _format_asset_msg(self, type, asset):
+        type = self._get_type_for_code(type)
+
         id = asset.attrib['id']
         subject = asset.find('Attribute[@name="Name"]').text
         number = asset.find('Attribute[@name="Number"]').text
@@ -481,6 +483,8 @@ class VersionOne(plugin.Plugin):
         return self.irc.post_url(url, data)
 
     def _filter_assets(self, type, sel=None, filters=None):
+        type = self._get_type_for_code(type)
+
         url = "%s/Data/%s" % (self.versionone_url, type)
 
         queries = []
@@ -501,3 +505,10 @@ class VersionOne(plugin.Plugin):
         response = self.irc.fetch_url(url, self.name)
         assets = etree.XML(response.read())
         return assets
+
+    def _get_type_for_code(self, type):
+        if type in V1MAPPING:
+            return V1MAPPING[type]
+        else:
+            return type
+

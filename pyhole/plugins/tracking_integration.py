@@ -78,27 +78,43 @@ class TrackingIntegration(plugin.Plugin):
     @utils.spawn
     def findreviews(self, params=None, **kwargs):
         """Finds stories requiring reviews in the given project / scope
-           usage: findreviews projectid"""
+           usage: findreviews [B|D|E|TK] projectid
+           where: B - backlog/stories, D - defects, E - epics, TK - tasks"""
         if params:
-            project_id = None
-            try:
-                project_id = self.projname.get_project_id(params)
-            except KeyError:
-                project_id = params
-            filters = {
-                "Scope": ("Scope:%s" % project_id),
-                "Links.Name": "Review",
-                "AssetState": "64",
-                }
+            p_list = params.split(" ", 1)
+            if len(p_list) == 2:
+                type = p_list[0].upper()
 
-            assets = self.version_one._filter_assets("Story", sel="Links,Name,Number,Status.Name,Owners.Name,Links.URL", filters=filters)
-            for elt in assets.iterchildren('Asset'):
-                self.irc.reply(self.version_one._format_asset_msg("Story", elt))
-                review_names = [value.text for value in elt.xpath("Attribute[@name='Links.Name']")[0].iterchildren('Value')]
+                project_id = None
+                try:
+                    project_id = self.projname.get_project_id(p_list[1])
+                except KeyError:
+                    project_id = p_list[1]
+
+                if type in ['B','D','E','TK']:
+                    self._find_reviews_for_asset_type(project_id, type)
+                    return
+
+        self.irc.reply(self.findreviews.__doc__)
+
+    def _find_reviews_for_asset_type(self, project_id, asset_type):
+        filters = {
+            "Scope": ("Scope:%s" % project_id),
+            "Links.Name": "Review",
+            "AssetState": "64",
+            }
+
+        assets = self.version_one._filter_assets(asset_type, sel="Links,Name,Number,Status.Name,Owners.Name,Links.URL", filters=filters)
+        found = False
+        for elt in assets.iterchildren('Asset'):
+            review_names = [value.text for value in elt.xpath("Attribute[@name='Links.Name']")[0].iterchildren('Value')]
+            if "Review" in review_names:
+                found = True
                 review_links = [value.text for value in elt.xpath("Attribute[@name='Links.URL']")[0].iterchildren('Value')]
+                self.irc.reply(self.version_one._format_asset_msg(asset_type, elt))
                 for i in range(len(review_names)):
                     name = review_names[i]
                     if name == "Review":
                         self.irc.reply("%s: %s" % (name, review_links[i]))
-        else:
-            self.irc.reply(self.findreviews.__doc__)
+        if not found:
+            self.irc.reply("No items of type [%s] with reviews found" % asset_type)
